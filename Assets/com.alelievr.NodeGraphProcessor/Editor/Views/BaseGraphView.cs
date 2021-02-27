@@ -698,7 +698,7 @@ namespace GraphProcessor
 			EditorSceneManager.sceneSaved += _ => SaveGraphToDisk();
 
 			ClearGraphElements();
-
+			
 			InitializeGraphView();
 			InitializeNodeViews();
 			InitializeEdgeViews();

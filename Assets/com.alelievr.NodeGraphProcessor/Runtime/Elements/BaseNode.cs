@@ -12,7 +12,7 @@ namespace GraphProcessor
 	public delegate IEnumerable< PortData > CustomPortTypeBehaviorDelegate(string fieldName, string displayName, object value);
 
 	[Serializable]
-	public abstract class BaseNode
+	public abstract class BaseNode : ISerializationCallbackReceiver
 	{
 		/// <summary>
 		/// Name of the node, it will be displayed in the title section
@@ -59,12 +59,12 @@ namespace GraphProcessor
 		/// Container of input ports
 		/// </summary>
 		[NonSerialized]
-		public readonly NodeInputPortContainer	inputPorts;
+		public NodeInputPortContainer inputPorts;
 		/// <summary>
 		/// Container of output ports
 		/// </summary>
 		[NonSerialized]
-		public readonly NodeOutputPortContainer	outputPorts;
+		public NodeOutputPortContainer outputPorts;
 
 		//Node view datas
 		public Rect					position;
@@ -815,5 +815,20 @@ namespace GraphProcessor
 		}
 
 		#endregion
+
+		public void OnBeforeSerialize() { }
+
+		public void OnAfterDeserialize()
+		{
+			inputPorts = new NodeInputPortContainer(this);
+			outputPorts = new NodeOutputPortContainer(this);
+			
+			nodeFields = new Dictionary<string, NodeFieldInformation>();
+			customPortTypeBehaviorMap = new Dictionary<Type, CustomPortTypeBehaviorDelegate>();
+			fieldsToUpdate = new Stack<PortUpdate>();
+			updatedFields = new HashSet<PortUpdate>();
+
+			InitializeInOutDatas();
+		}
 	}
 }

@@ -101,9 +101,13 @@ ParameterNodeView #controls EnumField > VisualElement > VisualElement {
 #input-container {
     position: absolute;
     right: 100%;
-    top: 45px;
+    top: 50px;
     align-items: flex-end;
     --layer: -50;
+}
+
+#input-container.has-output {
+    top: 45px;
 }
 
 #input-container > .port-input-element > IntegerField,

@@ -7,6 +7,9 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Globalization;
+using System.Text.RegularExpressions;
+using UnityEditor;
+using UnityEditorInternal;
 
 namespace GraphProcessor
 {
@@ -142,6 +145,36 @@ namespace GraphProcessor
 
 		public static VisualElement CreateField(Type fieldType, object value, Action< object > onValueChanged, string label)
 		{
+			if (fieldType.IsEnum && fieldType.GetCustomAttribute<FlagsAttribute>() != null)
+			{
+				var choices = Enum.GetNames(fieldType);
+				var maskField = new MaskField(label, choices.ToList(), (int) value, s => s, s => s);
+				maskField.RegisterValueChangedCallback(e =>
+				{
+					onValueChanged(Enum.ToObject(fieldType, e.newValue));
+				});
+				
+				return maskField;
+			}
+
+			if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(List<>))
+			{
+				var list = value as IList;
+				var innerType = fieldType.GetGenericArguments()[0];
+				
+				var orderable = new ReorderableList(list, innerType);
+				orderable.drawElementCallback = (rect, index, isActive, isFocused) =>
+				{
+					if (typeof(Enum).IsAssignableFrom(innerType))
+						list[index] = EditorGUI.EnumPopup(rect, list[index] as Enum);
+					if (innerType == typeof(string))
+						list[index] = EditorGUI.TextField(rect, list[index] as string);
+				};
+
+				var container = new IMGUIContainer(() => { orderable.DoLayoutList(); });
+				return container;
+			}
+			
 			if (typeof(Enum).IsAssignableFrom(fieldType))
 				fieldType = typeof(Enum);
 
@@ -159,6 +192,27 @@ namespace GraphProcessor
 
 				field = layerField;
 			}
+			else if (!HasDrawer(fieldType))
+			{
+				var fields = fieldType
+					.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+					.Where(x => x.GetCustomAttribute<SerializeField>() != null || x.IsPublic);
+				var container = new VisualElement();
+				container.styleSheets.Add(Resources.Load<StyleSheet>("InspectorView"));
+				container.AddToClassList("root");
+					
+				container.Add(new Label(label));
+				
+				foreach (var f in fields)
+				{
+					if(value == null)
+						value = Activator.CreateInstance(fieldType);
+					
+					var fValue = f.GetValue(value);
+					container.Add(CreateField(f.FieldType, fValue, changed => f.SetValue(value, changed), GetFormattedTypeName(f.Name)));
+				}
+				field = container;
+			}
 			else
 			{
 				try
@@ -166,8 +220,14 @@ namespace GraphProcessor
 					var createFieldSpecificMethod = createFieldMethod.MakeGenericMethod(fieldType);
 					try
 					{
-						field = createFieldSpecificMethod.Invoke(null, new object[]{value, onValueChanged, label}) as VisualElement;
-					} catch {}
+						field =
+							createFieldSpecificMethod.Invoke(null, new object[] {value, onValueChanged, label}) as
+								VisualElement;
+					}
+					catch(Exception e)
+					{
+						Debug.LogError(e);
+					}
 
 					// handle the Object field case
 					if (field == null && (value == null || value is UnityEngine.Object))
@@ -188,6 +248,28 @@ namespace GraphProcessor
 			}
 
 			return field;
+		}
+		
+		private static string GetFormattedTypeName(string name)
+		{
+			if (name.StartsWith("m_", false, CultureInfo.InvariantCulture))
+				name = name.Substring(2);
+			
+			// Ugly fix for SharedVariable values
+			if (name == "mValue")
+				name = "Value";
+			name = char.ToUpperInvariant(name[0]) + name.Substring(1);
+			return string.Join(" ", Regex.Replace(name, "(\\B[A-Z])", " $1"));
+		}
+
+		private static bool HasDrawer(Type fieldType)
+		{
+			fieldDrawers.TryGetValue(fieldType, out var drawerType);
+
+			if (drawerType == null)
+				drawerType = fieldDrawers.FirstOrDefault(kp => kp.Key.IsReallyAssignableFrom(fieldType)).Value;
+			
+			return drawerType != null;
 		}
 	}
 }

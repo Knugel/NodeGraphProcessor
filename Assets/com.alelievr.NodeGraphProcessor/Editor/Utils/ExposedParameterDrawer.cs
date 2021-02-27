@@ -25,9 +25,11 @@ namespace GraphProcessor
 
             var p = new PropertyField(GetValProperty(property), displayName);
 
+            /*
             p.RegisterValueChangeCallback(e => {
                 ApplyModifiedProperties(property);
             });
+            */
 
             return p;
         }
@@ -196,10 +198,12 @@ namespace GraphProcessor
             var param = GetParameter(settingsProperty); 
 			var p =  new PropertyField(isHidden, "Hide in Inspector");
 
+            /*
             p.RegisterValueChangeCallback(e => {
                 settingsProperty.serializedObject.ApplyModifiedProperties();
                 graph.NotifyExposedParameterChanged(param);
             });
+            */
 
             return p;
         }
@@ -222,10 +226,13 @@ namespace GraphProcessor
 
             var p =  new PropertyField(prop, displayName);
             p.Bind(settingsProperty.serializedObject);
+            
+            /*
             p.RegisterValueChangeCallback(e => {
                 settingsProperty.serializedObject.ApplyModifiedProperties();
                 graph.NotifyExposedParameterChanged(param);
             });
+            */
 
             return p;
         }
@@ -258,7 +265,8 @@ namespace GraphProcessor
             var min = CreateSettingsField(settingsProperty, nameof(FloatParameter.FloatSettings.min), "Min");
             var max = CreateSettingsField(settingsProperty, nameof(FloatParameter.FloatSettings.max), "Max");
 
-            mode.RegisterValueChangeCallback(e => UpdateVisibility(e.changedProperty));
+            // mode.RegisterValueChangeCallback(e => UpdateVisibility(e.changedProperty));
+            
             UpdateVisibility(settingsProperty.FindPropertyRelative(nameof(FloatParameter.FloatSettings.mode)));
 
             void UpdateVisibility(SerializedProperty property)
@@ -294,7 +302,8 @@ namespace GraphProcessor
             var min = CreateSettingsField(settingsProperty, nameof(IntParameter.IntSettings.min), "Min");
             var max = CreateSettingsField(settingsProperty, nameof(IntParameter.IntSettings.max), "Max");
 
-            mode.RegisterValueChangeCallback(e => UpdateVisibility(e.changedProperty));
+            // mode.RegisterValueChangeCallback(e => UpdateVisibility(e.changedProperty));
+            
             UpdateVisibility(settingsProperty.FindPropertyRelative(nameof(IntParameter.IntSettings.mode)));
 
             void UpdateVisibility(SerializedProperty property)
