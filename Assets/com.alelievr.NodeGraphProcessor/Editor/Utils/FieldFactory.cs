@@ -162,6 +162,9 @@ namespace GraphProcessor
 				var list = value as IList;
 				var innerType = fieldType.GetGenericArguments()[0];
 				
+				if(list == null)
+					return new VisualElement();
+				
 				var orderable = new ReorderableList(list, innerType);
 				orderable.drawElementCallback = (rect, index, isActive, isFocused) =>
 				{
