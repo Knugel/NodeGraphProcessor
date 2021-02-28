@@ -262,7 +262,7 @@ namespace GraphProcessor
 			if (name == "mValue")
 				name = "Value";
 			name = char.ToUpperInvariant(name[0]) + name.Substring(1);
-			return string.Join(" ", Regex.Replace(name, "(\\B[A-Z])", " $1"));
+			return string.Join(" ", Regex.Replace(name, "(?<!^)([A-Z][a-z]|(?<=[a-z])[A-Z])", " $1"));
 		}
 
 		private static bool HasDrawer(Type fieldType)
